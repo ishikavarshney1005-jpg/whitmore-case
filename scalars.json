@@ -1,0 +1,18 @@
+{
+  "total_core_q4_pnl": -954730.0243015923,
+  "total_oneoff_q4_pnl": 0.0,
+  "total_recognized": 70345.58,
+  "net_accrual_gap_q4": -4382875.0,
+  "total_income_no_cash": 2016625.0,
+  "total_expense_no_cash": 6399500.0,
+  "q4_greystone_recognized": 5662500.0,
+  "q4_ironbridge_recognized": 4125000.0,
+  "swap_pnl_cumulative": -3842000.0,
+  "gbp_realized_pnl": -2273600.0000000033,
+  "gbp_correct_hedge_pnl": 2273600.0000000033,
+  "jpy_forward_pnl": 488230.4581984114,
+  "jpy_under_hedge_usd": 2153649.984061205,
+  "lumivue_exposure": 80000000.0,
+  "orion_exposure": 65312500.0,
+  "timberline_ent_exposure": 30000000.0
+}
