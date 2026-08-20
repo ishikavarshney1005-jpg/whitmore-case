@@ -3,18 +3,8 @@ Whitmore Structured Credit Opportunities Fund II — LAIM Sleeve Dashboard
 ==========================================================================
 Case Study: FinValley 10.0 (Caldwell & Crane Partners)
 
-Reads pre-computed, verified outputs from the Part A analysis notebook
-(dashboard_data/*.csv) and presents them as an interactive dashboard for
-the audiences identified in Part B.
-
-Run locally:
-    pip install streamlit pandas plotly
-    streamlit run app.py
-
-Deploy free:
-    Push this folder (app.py + data/ + requirements.txt) to a public GitHub
-    repo, then go to https://share.streamlit.io , sign in with GitHub, and
-    point it at the repo. No server setup needed.
+Reads pre-computed, verified outputs from the Part A calculation notebook
+(data/*.csv) and presents them as an interactive, institutional-grade dashboard.
 """
 
 import json
@@ -26,22 +16,70 @@ import plotly.graph_objects as go
 import streamlit as st
 
 # --------------------------------------------------------------------------
-# Page config & light styling
+# Page config & professional styling
 # --------------------------------------------------------------------------
 st.set_page_config(
     page_title="Whitmore Fund II — LAIM Sleeve Dashboard",
-    page_icon="\U0001F4CA",
+    page_icon="📊",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 st.markdown(
     """
     <style>
-    .stMetric { background-color: #f8f9fb; border: 1px solid #e6e8eb;
-                border-radius: 8px; padding: 10px 14px; }
-    div[data-testid="stMetricLabel"] { font-size: 0.85rem; color: #555; }
-    .breach { color: #b3261e; font-weight: 600; }
-    .ok { color: #146c2e; font-weight: 600; }
+    /* Main background & font styling */
+    .main { background-color: #f4f6f9; }
+    
+    /* Metric Card Styling */
+    .stMetric {
+        background-color: #ffffff;
+        border: 1px solid #e1e4e8;
+        border-radius: 10px;
+        padding: 14px 18px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    div[data-testid="stMetricLabel"] {
+        font-size: 0.82rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #586069;
+    }
+    div[data-testid="stMetricValue"] {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2328;
+    }
+
+    /* Tabs styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: #ffffff;
+        border-radius: 6px 6px 0px 0px;
+        padding: 10px 16px;
+        font-weight: 600;
+        border: 1px solid #e1e4e8;
+        color: #24292e;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #0366d6 !important;
+        color: white !important;
+    }
+
+    /* Subheaders and text */
+    h3 {
+        color: #1f2328;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+    }
+    
+    /* Custom Badge helpers */
+    .badge-red { background-color: #ffeef0; color: #b3261e; padding: 4px 8px; border-radius: 4px; font-weight: 600; }
+    .badge-green { background-color: #e6ffed; color: #146c2e; padding: 4px 8px; border-radius: 4px; font-weight: 600; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -51,12 +89,11 @@ DATA_DIR = Path(__file__).parent
 
 
 # --------------------------------------------------------------------------
-# Data loading (cached so the app doesn't re-read CSVs on every interaction)
+# Data loading (cached)
 # --------------------------------------------------------------------------
 @st.cache_data
 def load_csv(name: str) -> pd.DataFrame:
     df = pd.read_csv(DATA_DIR / f"{name}.csv")
-    # drop the leftover pandas index column that comes from to_csv(index=True)
     if df.columns[0].startswith("Unnamed"):
         df = df.drop(columns=[df.columns[0]])
     return df
@@ -85,7 +122,7 @@ oneoff_pnl = load_csv("oneoff_pnl_components")
 assumptions = load_csv("assumptions_log")
 scalars = load_scalars()
 
-# Map each core P&L line to an asset class, for the asset-class filter
+# Mappings
 ASSET_CLASS_MAP = {
     "Net loan book interest/PIK income": "Loan Book",
     "Greystone + Ironbridge financing cost": "Financing",
@@ -122,8 +159,9 @@ ALL_ASSET_CLASSES = sorted(
 # --------------------------------------------------------------------------
 # Sidebar — global filters
 # --------------------------------------------------------------------------
-st.sidebar.title("Filters")
-st.sidebar.caption("Applies to the Cash vs. Recognized and Overview tabs.")
+st.sidebar.image("https://img.icons8.com/color/96/investment-portfolio.png", width=60)
+st.sidebar.title("Portfolio Filters")
+st.sidebar.markdown("Refines **Overview** and **Cash vs. Recognized** tabs.")
 
 selected_classes = st.sidebar.multiselect(
     "Asset class",
@@ -144,31 +182,31 @@ else:
     start_d, end_d = min_d.date(), max_d.date()
 
 st.sidebar.markdown("---")
-st.sidebar.caption(
-    "Data source: Part A calculation notebook (Steps 0–9), executed and "
-    "verified against the raw case files. All figures below are recognized "
-    "(accrual-basis), not raw cash, unless a chart is explicitly labeled 'Cash'."
+st.sidebar.info(
+    "**Fund Context:** Whitmore Structured Credit Opportunities Fund II, L.P. "
+    "Data pipeline verified against Step 0–9 computation outputs."
 )
 
 # --------------------------------------------------------------------------
 # Header + top-line KPIs
 # --------------------------------------------------------------------------
-st.title("Whitmore Fund II — Structured Credit & Derivatives Sleeve")
-st.caption("LAIM performance dashboard · Q4 2025 · Whitmore Structured Credit Opportunities Fund II, L.P.")
+st.title("Whitmore Fund II — LAIM Sleeve Dashboard")
+st.markdown("##### Q4 2025 Performance Review & Strategic Risk Monitoring")
+st.write("")
 
 kpi_dict = dict(zip(kpi_summary["KPI"], kpi_summary["Value"]))
 
 c1, c2, c3, c4 = st.columns(4)
-c1.metric("Net yield, before leverage (ann.)", kpi_dict.get("Net yield before leverage (annualized)", "—"))
-c2.metric("Net yield, after leverage (ann.)", kpi_dict.get("Net yield after leverage (annualized)", "—"))
+c1.metric("Net yield, pre-leverage", kpi_dict.get("Net yield before leverage (annualized)", "—"))
+c2.metric("Net yield, post-leverage", kpi_dict.get("Net yield after leverage (annualized)", "—"))
 c3.metric("Cost-to-income ratio", kpi_dict.get("Cost-to-income ratio", "—"))
 c4.metric("Debt-service coverage", kpi_dict.get("Debt-service coverage ratio", "—"))
 
 c5, c6, c7, c8 = st.columns(4)
-c5.metric("Net accrual (recognition-timing) gap, Q4", "-$4.38M", "-1.14% of NAV", delta_color="inverse")
-c6.metric("Largest single-name breach", "Lumivue", "20.8% of NAV vs 12.5% limit", delta_color="inverse")
-c7.metric("Largest counterparty exposure", "Greystone Fin. Grp", "$3.84M net")
-c8.metric("Hedges working as designed", "1 of 3", "IRS oversized, GBP backwards, JPY undersized", delta_color="off")
+c5.metric("Net accrual gap (Q4)", "-$4.38M", "-1.14% of NAV", delta_color="inverse")
+c6.metric("Largest single-name breach", "Lumivue", "20.8% vs 12.5% limit", delta_color="inverse")
+c7.metric("Top counterparty exposure", "Greystone Fin.", "$3.84M net")
+c8.metric("Hedges operational", "1 of 3", "2 misaligned structures", delta_color="off")
 
 st.markdown("---")
 
@@ -177,73 +215,53 @@ st.markdown("---")
 # --------------------------------------------------------------------------
 tab_overview, tab_loans, tab_hedges, tab_options, tab_conc, tab_lease, tab_cash, tab_assump = st.tabs(
     [
-        "Overview",
-        "Loan Book",
-        "Financing & Hedges",
-        "Options",
-        "Concentration",
-        "Leased Assets",
-        "Cash vs. Recognized",
-        "Assumptions Log",
+        "📈 Overview",
+        "📑 Loan Book",
+        "🛡️ Financing & Hedges",
+        "📊 Options",
+        "⚠️ Concentration",
+        "🏢 Leased Assets",
+        "💵 Cash vs. Recognized",
+        "🔍 Assumptions Log",
     ]
 )
 
 # ---- OVERVIEW ----
 with tab_overview:
-    st.subheader("Q4 2025 recognized P&L by component")
+    st.subheader("Q4 2025 Recognized P&L by Component")
     filtered_core = core_pnl[core_pnl["Asset_Class"].isin(selected_classes)]
-    fig = go.Figure()
-    colors = ["#146c2e" if v >= 0 else "#b3261e" for v in filtered_core["Amount_USD"]]
-    fig.add_bar(
-        x=filtered_core["Component"],
-        y=filtered_core["Amount_USD"],
-        marker_color=colors,
+    
+    fig = px.bar(
+        filtered_core,
+        x="Component",
+        y="Amount_USD",
+        color="Amount_USD",
+        color_continuous_scale=["#d93838", "#f0f2f5", "#107c41"],
+        color_continuous_midpoint=0,
         text=filtered_core["Amount_USD"].map(lambda v: f"${v:,.0f}"),
-        textposition="outside",
     )
+    fig.update_traces(textposition="outside")
     fig.update_layout(
+        template="plotly_white",
         yaxis_title="USD",
-        xaxis_tickangle=-30,
+        xaxis_tickangle=-25,
         height=450,
-        margin=dict(t=10, b=120),
+        margin=dict(t=20, b=100, l=40, r=20),
+        coloraxis_showscale=False,
     )
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, use_container_width=True)
 
     total_core = filtered_core["Amount_USD"].sum()
-    st.caption(
-        f"Total core recognized P&L across selected asset classes: **${total_core:,.0f}**. "
-        "This excludes the one-off Orion CDS/mezz-exchange pair below, which nets to "
-        "~$0 by construction (the CDS gain offsets the mezz writedown)."
-    )
+    st.success(f"**Total core recognized P&L (filtered):** ${total_core:,.0f} (Excludes Orion one-off restructuring items).")
 
-    st.subheader("One-off / event-driven items (Q4 2025)")
-    st.dataframe(oneoff_pnl, width='stretch', hide_index=True)
-    st.caption(
-        "These two lines are the Orion Studios credit event: the CDS auction settlement "
-        "(realized gain, cash in) and the mezzanine RSA exchange (realized writedown, no cash). "
-        "They are shown separately from core P&L because they are a single restructuring "
-        "event, not a recurring performance driver — blending them into 'core' would distort "
-        "the sleeve's run-rate yield."
-    )
-
-    st.subheader("Recognized P&L by asset class")
-    by_class = filtered_core.groupby("Asset_Class")["Amount_USD"].sum().reset_index()
-    fig2 = px.bar(
-        by_class, x="Asset_Class", y="Amount_USD", color="Amount_USD",
-        color_continuous_scale=["#b3261e", "#e8e8e8", "#146c2e"],
-        color_continuous_midpoint=0,
-    )
-    fig2.update_layout(height=350, showlegend=False, margin=dict(t=10))
-    st.plotly_chart(fig2, width='stretch')
+    st.subheader("One-off / Event-Driven Items (Q4 2025)")
+    st.dataframe(oneoff_pnl, use_container_width=True, hide_index=True)
+    st.caption("Orion Studios credit event: Realized auction settlement gain vs. Mezzanine RSA exchange markdown.")
 
 # ---- LOAN BOOK ----
 with tab_loans:
-    st.subheader("Master loan book (deduplicated, post-corporate-action)")
-    st.caption(
-        f"{len(loan_book)} unique positions, ${loan_book['Outstanding_USD'].sum():,.0f} total "
-        "outstanding (USD-converted). Duplicates across the Alpha/Beta servicer tapes and the "
-        "Orion mezz RSA exchange have already been resolved — see Assumptions Log for the reasoning."
-    )
+    st.subheader("Master Loan Book Registry")
+    st.caption(f"Total positions: {len(loan_book)} | Total outstanding: ${loan_book['Outstanding_USD'].sum():,.0f} USD")
 
     obligors = sorted(loan_book["Obligor_Name"].unique())
     servicers = sorted(loan_book["Servicer"].dropna().unique())
@@ -263,178 +281,102 @@ with tab_loans:
     lcol1, lcol2 = st.columns([2, 1])
     with lcol1:
         by_obligor = filt.groupby("Obligor_Name")["Outstanding_USD"].sum().sort_values(ascending=True)
-        fig3 = px.bar(by_obligor, orientation="h", labels={"value": "Outstanding (USD)", "Obligor_Name": ""})
-        fig3.update_layout(height=max(300, 28 * len(by_obligor)), showlegend=False, margin=dict(t=10))
-        st.plotly_chart(fig3, width='stretch')
+        fig3 = px.bar(by_obligor, orientation="h", template="plotly_white")
+        fig3.update_layout(height=340, margin=dict(t=10, b=10), showlegend=False, yaxis_title="")
+        st.plotly_chart(fig3, use_container_width=True)
     with lcol2:
-        fig4 = px.pie(filt, names="Coupon_Type", values="Outstanding_USD", hole=0.5)
-        fig4.update_layout(height=320, margin=dict(t=10))
-        st.plotly_chart(fig4, width='stretch')
+        fig4 = px.pie(filt, names="Coupon_Type", values="Outstanding_USD", hole=0.4, template="plotly_white")
+        fig4.update_layout(height=340, margin=dict(t=10, b=10))
+        st.plotly_chart(fig4, use_container_width=True)
 
     st.dataframe(
         filt[["Loan_Key", "Obligor_Name", "CCY", "Tranche", "Outstanding_USD",
               "Coupon_Type", "Fixed_Rate_Pct", "Coupon_Spread_bps", "Servicer", "Reporting_Basis"]],
-        width='stretch', hide_index=True,
-    )
-
-    st.markdown("**Q4 recognized interest/PIK income by loan**")
-    # Recompute the per-loan income table shape from core_pnl_components context is not
-    # available here row-by-row, so we surface the loan-level detail from the master book
-    # and point to the Overview tab for the aggregate figure.
-    st.caption(
-        "Aggregate net Q4 loan income (after placeholder 15bps servicer fee): "
-        "**$11,813,999**, shown in the Overview P&L chart. Two figures in this dataset are "
-        "explicitly documented placeholders (flagged in the notebook, not silently assumed): "
-        "a flat 4.30% floating-rate reset assumption where no live SOFR reset data exists, "
-        "and a flat 15bps blended servicer fee since per-loan fees didn't survive the source schema."
+        use_container_width=True, hide_index=True,
     )
 
 # ---- FINANCING & HEDGES ----
 with tab_hedges:
-    st.subheader("Fund financing (Greystone revolver + Ironbridge term loan)")
-    st.caption(
-        "The memo's own pointer to the revolver utilization report is incorrect for this "
-        "purpose — that file covers asset-side loan-book revolvers (Solara, Orion), not the "
-        "fund's own borrowing facility. Shown below for reference since it still matters for "
-        "loan-level yield."
-    )
-
+    st.subheader("Fund Financing & Facility Utilization")
     facilities = sorted(revolver["Obligor"].unique())
-    sel_fac = st.multiselect("Loan-book revolver obligor", facilities, default=facilities)
-    rev_filt = revolver[revolver["Obligor"].isin(sel_fac)]
-    rev_filt = rev_filt.copy()
+    sel_fac = st.multiselect("Revolver obligor", facilities, default=facilities)
+    rev_filt = revolver[revolver["Obligor"].isin(sel_fac)].copy()
     rev_filt["Report_Date"] = pd.to_datetime(rev_filt["Report_Date"])
-    fig5 = px.line(
-        rev_filt.sort_values("Report_Date"), x="Report_Date", y="Drawn_USD", color="Obligor",
-        markers=True,
-    )
-    fig5.update_layout(height=320, margin=dict(t=10), yaxis_title="Drawn balance (USD)")
-    st.plotly_chart(fig5, width='stretch')
+    
+    fig5 = px.line(rev_filt.sort_values("Report_Date"), x="Report_Date", y="Drawn_USD", color="Obligor", markers=True, template="plotly_white")
+    fig5.update_layout(height=320, margin=dict(t=10, b=10), yaxis_title="Drawn Balance (USD)")
+    st.plotly_chart(fig5, use_container_width=True)
 
     st.markdown("---")
-    st.subheader("Hedge effectiveness — reported per-hedge, not blended")
-    st.caption(
-        "The PM's notes ask for a single blended (swap P&L + change in facility interest "
-        "expense) / notional ratio. We report per-hedge instead: a single blended number "
-        "would hide the fact that only one of three hedges is working as designed."
-    )
-
+    st.subheader("Hedge Effectiveness Summary")
+    
     def _color_assessment(val: str) -> str:
-        v = val.lower()
+        v = str(val).lower()
         if "wrong" in v or "backwards" in v:
-            return "background-color: #fde8e6"
+            return "background-color: #ffeef0; color: #b3261e;"
         if "oversized" in v or "undersized" in v:
-            return "background-color: #fff6d9"
-        return "background-color: #e8f5e9"
+            return "background-color: #fff8c4; color: #b08800;"
+        return "background-color: #e6ffed; color: #146c2e;"
 
     try:
         styled_hedge = hedge_summary.style.map(_color_assessment, subset=["Assessment"])
     except AttributeError:
-        # older pandas versions use applymap instead of map
         styled_hedge = hedge_summary.style.applymap(_color_assessment, subset=["Assessment"])
-    st.dataframe(styled_hedge, width='stretch', hide_index=True)
-
-    fig6 = go.Figure()
-    colors6 = ["#146c2e" if v >= 0 else "#b3261e" for v in hedge_summary["Q4_Hedge_PnL_USD"]]
-    fig6.add_bar(x=hedge_summary["Hedge"], y=hedge_summary["Q4_Hedge_PnL_USD"], marker_color=colors6)
-    fig6.update_layout(height=350, margin=dict(t=10), yaxis_title="Q4 Hedge P&L (USD)")
-    st.plotly_chart(fig6, width='stretch')
+    
+    st.dataframe(styled_hedge, use_container_width=True, hide_index=True)
 
     st.markdown("---")
-    st.subheader("FX forwards detail")
-    st.dataframe(fx_summary, width='stretch', hide_index=True)
-
-    st.markdown("---")
-    st.subheader("CDS book")
-    st.dataframe(cds_book, width='stretch', hide_index=True)
-    st.caption(
-        "Orion: closed, credit event settled (realized gain shown). Lumivue: open hedge, "
-        "in-the-money. Timberline Entertainment Group: protection SOLD (income trade, "
-        "unrelated to the Timberline Music Rights loan obligor despite the shared name)."
-    )
+    st.subheader("Credit Default Swaps (CDS) Book")
+    st.dataframe(cds_book, use_container_width=True, hide_index=True)
 
 # ---- OPTIONS ----
 with tab_options:
-    st.subheader("Options — recognized P&L components")
-    st.dataframe(options_summary, width='stretch', hide_index=True)
-    fig7 = px.bar(options_summary, x="Component", y="Amount_USD", color="Recognized")
-    fig7.update_layout(height=350, margin=dict(t=10), xaxis_tickangle=-20)
-    st.plotly_chart(fig7, width='stretch')
-    st.caption(
-        "The FRGF written put required rebuilding the mark from raw share count and price — "
-        "both source documents (TSV and broker MTM statement) independently carried the same "
-        "100x pence-vs-pounds unit error. The SLRA OTC call (model-based, 62% vol, source "
-        "unclear) is deliberately not mark-to-market recognized, per the PM's conservative "
-        "instruction — it is Level 3 and stays off recognized P&L until exercise or an "
-        "observable price."
-    )
+    st.subheader("Options Recognized P&L Breakdown")
+    st.dataframe(options_summary, use_container_width=True, hide_index=True)
+    fig7 = px.bar(options_summary, x="Component", y="Amount_USD", color="Recognized", template="plotly_white", color_discrete_map={True: "#107c41", False: "#586069"})
+    fig7.update_layout(height=350, margin=dict(t=10, b=30))
+    st.plotly_chart(fig7, use_container_width=True)
 
 # ---- CONCENTRATION ----
 with tab_conc:
-    st.subheader("Single-name concentration vs. the Greystone 12.5% covenant limit")
+    st.subheader("Single-Name Concentration vs. 12.5% Covenant Limit")
     st.dataframe(
         concentration_name.style.apply(
-            lambda row: ["background-color: #fde8e6" if row["Breach"] else "" for _ in row],
+            lambda row: ["background-color: #ffeef0; color: #b3261e;" if row["Breach"] else "" for _ in row],
             axis=1,
         ),
-        width='stretch', hide_index=True,
+        use_container_width=True, hide_index=True,
     )
+    
     fig8 = px.bar(
         concentration_name, x="Reference_Entity", y="Exposure_USD",
-        color="Breach", color_discrete_map={True: "#b3261e", False: "#146c2e"},
+        color="Breach", color_discrete_map={True: "#b3261e", False: "#107c41"},
+        template="plotly_white"
     )
-    fig8.add_hline(y=concentration_name["Limit_USD"].iloc[0], line_dash="dash",
-                    annotation_text="12.5% NAV limit", line_color="black")
-    fig8.update_layout(height=380, margin=dict(t=10))
-    st.plotly_chart(fig8, width='stretch')
-    st.caption(
-        "Two breaches exist that Greystone's own compliance certificate (Notice 5) either "
-        "left unresolved (Orion) or never flagged at all (Lumivue's combined $120M across two "
-        "tranches — simple addition the formal process appears to have missed)."
-    )
+    fig8.add_hline(y=concentration_name["Limit_USD"].iloc[0], line_dash="dash", annotation_text="12.5% NAV Limit", line_color="#24292e")
+    fig8.update_layout(height=380, margin=dict(t=10, b=30))
+    st.plotly_chart(fig8, use_container_width=True)
 
     st.markdown("---")
-    st.subheader("Counterparty (default-risk) concentration — deduplicated across source systems")
-    st.dataframe(concentration_cp, width='stretch', hide_index=True)
-    fig9 = px.bar(concentration_cp, x="Legal_Entity_Group", y="Net_Exposure_USD")
-    fig9.update_layout(height=350, margin=dict(t=10), yaxis_title="Net exposure (USD)")
-    st.plotly_chart(fig9, width='stretch')
-    st.caption(
-        "This is a *different* risk from the single-name test above: Greystone Financial "
-        "Group is simultaneously the fund's lender, its IRS counterparty, and its facility "
-        "agent — a relationship concentration, not an asset concentration."
-    )
+    st.subheader("Counterparty Exposure Summary")
+    st.dataframe(concentration_cp, use_container_width=True, hide_index=True)
 
 # ---- LEASED ASSETS ----
 with tab_lease:
-    st.subheader("Full leased-assets registry")
+    st.subheader("Leased Assets Registry")
     cat_options = sorted(lease_full["Asset_Category"].unique())
     sel_cat = st.multiselect("Asset category", cat_options, default=cat_options)
     lease_filt = lease_full[lease_full["Asset_Category"].isin(sel_cat)]
-    st.dataframe(
-        lease_filt[["Lease_ID", "Asset_Category", "Description", "Lessor",
-                    "Payment_Freq", "Payment_Amount_USD_num", "Classification_per_FA",
-                    "Classification_per_PM"]],
-        width='stretch', hide_index=True,
-    )
+    st.dataframe(lease_filt, use_container_width=True, hide_index=True)
 
     st.markdown("---")
-    st.subheader("Content-library leases: the disputed treatment")
-    st.caption(
-        "Fund Accounting treats these as opex against a different sleeve's royalty revenue; "
-        "Portfolio/PM treats them as a cost of this sleeve's capital-light structure. This "
-        "dashboard adopts the **Portfolio/PM view** (cost belongs to this sleeve) since the "
-        "JPY-exposed asset and its FX hedge already sit in this sleeve's book — documented as "
-        "a judgment call, not a fact."
-    )
-    st.dataframe(sleeve_lease_cost[["Lease_ID", "Description", "Lessor", "Payment_Freq",
-                                     "Payment_Amount_USD_num", "Classification_per_PM", "Notes"]],
-                 width='stretch', hide_index=True)
-    st.metric("Q4 recognized content-library lease cost (this sleeve)", "$1,279,205")
+    st.subheader("Content-Library Lease Costs (Sleeve Allocation)")
+    st.dataframe(sleeve_lease_cost, use_container_width=True, hide_index=True)
+    st.metric("Total Q4 Content-Library Cost Allocated", "$1,279,205")
 
 # ---- CASH VS RECOGNIZED ----
 with tab_cash:
-    st.subheader("Cash ledger — filtered by asset class and period")
+    st.subheader("Cash Ledger Movements")
     cash_filt = cash_ledger[
         cash_ledger["Asset_Class"].isin(selected_classes)
         & (cash_ledger["Value_Date"].dt.date >= start_d)
@@ -442,58 +384,38 @@ with tab_cash:
     ]
 
     cc1, cc2 = st.columns(2)
-    cc1.metric("Total cash in (filtered)", f"${cash_filt.loc[cash_filt['Amount_USD']>0,'Amount_USD'].sum():,.0f}")
-    cc2.metric("Total cash out (filtered)", f"${cash_filt.loc[cash_filt['Amount_USD']<0,'Amount_USD'].sum():,.0f}")
+    cc1.metric("Total Cash In (Filtered)", f"${cash_filt.loc[cash_filt['Amount_USD']>0,'Amount_USD'].sum():,.0f}")
+    cc2.metric("Total Cash Out (Filtered)", f"${cash_filt.loc[cash_filt['Amount_USD']<0,'Amount_USD'].sum():,.0f}")
 
     cash_daily = cash_filt.groupby("Value_Date")["Amount_USD"].sum().cumsum().reset_index()
-    fig10 = px.line(cash_daily, x="Value_Date", y="Amount_USD", markers=True,
-                     title="Cumulative net cash movement (filtered)")
-    fig10.update_layout(height=350, margin=dict(t=40))
-    st.plotly_chart(fig10, width='stretch')
+    fig10 = px.line(cash_daily, x="Value_Date", y="Amount_USD", markers=True, template="plotly_white")
+    fig10.update_layout(height=320, margin=dict(t=10, b=10), yaxis_title="Cumulative Net Cash (USD)")
+    st.plotly_chart(fig10, use_container_width=True)
 
-    st.dataframe(
-        cash_filt[["Value_Date", "Description", "Category_Raw", "Asset_Class", "Amount_USD", "Reference"]]
-        .sort_values("Value_Date"),
-        width='stretch', hide_index=True,
-    )
+    st.dataframe(cash_filt.sort_values("Value_Date"), use_container_width=True, hide_index=True)
 
     st.markdown("---")
-    st.subheader("Recognition-timing gap, Q4 2025")
-    st.caption(
-        "The core Part A finding: expenses are being recognized ahead of income on a cash "
-        "basis. This is not the same as the P&L totals above — it isolates timing mismatches "
-        "specifically."
-    )
-    gap1, gap2, gap3 = st.columns(3)
-    gap1.metric("Income recognized, cash not yet received", f"${scalars['total_income_no_cash']:,.0f}")
-    gap2.metric("Expense recognized, cash not yet paid", f"-${scalars['total_expense_no_cash']:,.0f}")
-    gap3.metric("Net accrual gap", f"${scalars['net_accrual_gap_q4']:,.0f}", "-1.14% of NAV", delta_color="inverse")
-    st.caption(
-        "Separately: the $14,437,500 Orion CDS settlement was booked 102 days after its "
-        "value date — a controls/timeliness issue distinct from accrual risk, since the cash "
-        "did move, just late in the books."
-    )
+    st.subheader("Recognition-Timing Accrual Gap (Q4)")
+    g1, g2, g3 = st.columns(3)
+    g1.metric("Income Recognized, Cash Pending", f"${scalars['total_income_no_cash']:,.0f}")
+    g2.metric("Expense Recognized, Cash Pending", f"-${scalars['total_expense_no_cash']:,.0f}")
+    g3.metric("Net Accrual Gap", f"${scalars['net_accrual_gap_q4']:,.0f}", "-1.14% NAV", delta_color="inverse")
 
 # ---- ASSUMPTIONS LOG ----
 with tab_assump:
-    st.subheader("Recognition & allocation assumptions — Part A audit trail")
-    st.caption(
-        "Every judgment call made while building the metrics above, with the issue, the "
-        "resolution, and the quantified impact. This is what the case's own rubric means by "
-        "'declared assumptions' — nothing here is silent."
-    )
+    st.subheader("Audit Trail: Assumptions & Judgment Calls")
     step_options = sorted(assumptions["Step"].unique())
-    sel_steps = st.multiselect("Filter by notebook step", step_options, default=step_options)
+    sel_steps = st.multiselect("Filter step", step_options, default=step_options)
     area_options = sorted(assumptions["Area"].unique())
-    sel_areas = st.multiselect("Filter by area", area_options, default=area_options)
+    sel_areas = st.multiselect("Filter area", area_options, default=area_options)
 
-    assump_filt = assumptions[
-        assumptions["Step"].isin(sel_steps) & assumptions["Area"].isin(sel_areas)
-    ]
-    st.dataframe(assump_filt, width='stretch', hide_index=True)
+    assump_filt = assumptions[assumptions["Step"].isin(sel_steps) & assumptions["Area"].isin(sel_areas)]
+    st.dataframe(assump_filt, use_container_width=True, hide_index=True)
 
 st.markdown("---")
-st.caption(
-    "Whitmore Fund II LAIM Sleeve Dashboard · Built for the FinValley 10.0 case study · "
-    "All figures traced to the Part A calculation notebook, executed end-to-end with zero errors."
+st.markdown(
+    "<div style='text-align: center; color: #586069; font-size: 0.8rem;'>"
+    "Whitmore Fund II LAIM Sleeve Dashboard · Built for FinValley 10.0"
+    "</div>",
+    unsafe_allow_html=True,
 )
