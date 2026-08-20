@@ -47,7 +47,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-DATA_DIR = Path(__file__).parent / "data"
+DATA_DIR = Path(__file__).parent /
 
 
 # --------------------------------------------------------------------------
